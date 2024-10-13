@@ -1,3 +1,7 @@
+####################################################################################
+######this is a new analysis on 10/12/2024
+####################################################################################
+
 no_source()
 ####This should be run in workstation
 
@@ -11,8 +15,8 @@ source("1_code/100_tools.R")
 
 load("3_data_analysis/monkey_metabolomics_data_preparation/metabolite/object")
 
-dir.create("3_data_analysis/family_relationship_prediction")
-setwd("3_data_analysis/family_relationship_prediction")
+dir.create("3_data_analysis/family_relationship_prediction_new")
+setwd("3_data_analysis/family_relationship_prediction_new")
 
 sample_info <-
   extract_sample_info(object) %>%
@@ -37,21 +41,18 @@ node_data <-
 
 edge_data1 <-
   temp_data %>%
-  dplyr::select(from = father,
-                to = sample_id) %>%
+  dplyr::select(from = father, to = sample_id) %>%
   dplyr::mutate(class = "father_child") %>%
   dplyr::filter(from != "unknown")
 
 edge_data2 <-
   temp_data %>%
-  dplyr::select(from = mother,
-                to = sample_id) %>%
+  dplyr::select(from = mother, to = sample_id) %>%
   dplyr::mutate(class = "mother_child") %>%
   dplyr::filter(from != "unknown")
 
 edge_data <-
-  rbind(edge_data1,
-        edge_data2)
+  rbind(edge_data1, edge_data2)
 
 # node_data <-
 #   node_data %>%
@@ -75,12 +76,8 @@ temp_graph <-
 
 plot <-
   ggraph(temp_graph, layout = "fr") +
-  geom_edge_link(arrow = arrow(length = unit(2, 'mm'),
-                               type = "open"),
-                 aes(color = class)) +
-  geom_node_point(aes(fill = sex,
-                      size = age),
-                  shape = 21) +
+  geom_edge_link(arrow = arrow(length = unit(2, 'mm'), type = "open"), aes(color = class)) +
+  geom_node_point(aes(fill = sex, size = age), shape = 21) +
   scale_fill_manual(values = sex_color) +
   scale_edge_color_manual(values = c(
     "father_child" = unname(sex_color["M"]),
@@ -89,9 +86,7 @@ plot <-
   scale_size_continuous(range = c(1, 5)) +
   ggraph::theme_graph() +
   shadowtext::geom_shadowtext(
-    aes(x = x,
-        y = y,
-        label = node),
+    aes(x = x, y = y, label = node),
     bg.colour = 'white',
     color = "black",
     size = 2,
@@ -106,27 +101,29 @@ ggsave(plot,
 
 library(igraph)
 
-###get the family distance for each two nodes
+#get the family distance for each two nodes
 # family_distance <-
 #   1:(nrow(node_data) - 1) %>%
 #   purrr::map(function(idx1) {
-#     cat(idx1, " ")
+#     cat(idx1, "\n")
 #     (idx1 + 1):nrow(node_data) %>%
 #       purrr::map(function(idx2) {
-#         family_score <-
-#           get_family_score(graph = temp_graph,
-#                            from = node_data$node[idx1],
-#                            to = node_data$node[idx2])
-#         data.frame(
-#           from = node_data$node[idx1],
-#           to = node_data$node[idx2],
-#           family_distance = family_score
-#         )
+#         cat(idx2, " ")
+#         distance <-
+#           find_relationship(df = node_data %>% dplyr::rename(id = node), 
+#                             id1 = node_data$node[idx1], 
+#                             id2 = node_data$node[idx2])
+#           
+#         if (is.null(distance)) {
+#           return(NULL)
+#         }
+# 
+#         distance
 #       }) %>%
 #       dplyr::bind_rows() %>%
 #       as.data.frame()
 #   })
-#
+# 
 # save(family_distance, file = "family_distance")
 load("family_distance")
 family_distance <-
@@ -148,18 +145,12 @@ temp_data <-
   )
 
 sub_graph <-
-  igraph::subgraph(graph = graph, 
-                   v = match(c("129F", "69U", "26B", "108F", "DBKW"),
-                             node_data$node))
+  igraph::subgraph(graph = temp_graph, v = match(c("129F", "69U", "26B", "108F", "DBKW"), node_data$node))
 
 plot <-
   ggraph(sub_graph, layout = "fr") +
-  geom_edge_link(arrow = arrow(length = unit(10, 'mm'),
-                               type = "open"),
-                 aes(color = class)) +
-  geom_node_point(aes(fill = sex),
-                  size = 15,
-                  shape = 21) +
+  geom_edge_link(arrow = arrow(length = unit(10, 'mm'), type = "open"), aes(color = class)) +
+  geom_node_point(aes(fill = sex), size = 15, shape = 21) +
   scale_fill_manual(values = sex_color) +
   scale_edge_color_manual(values = c(
     "father_child" = unname(sex_color["M"]),
@@ -168,9 +159,7 @@ plot <-
   scale_size_continuous(range = c(10, 15)) +
   ggraph::theme_graph() +
   shadowtext::geom_shadowtext(
-    aes(x = x,
-        y = y,
-        label = node),
+    aes(x = x, y = y, label = node),
     bg.colour = 'white',
     color = "black",
     size = 10,
@@ -178,10 +167,10 @@ plot <-
   )
 extrafont::loadfonts()
 plot
-# ggsave(plot,
-#        filename = "example_family_tree.pdf",
-#        width = 8,
-#        height = 7)
+ggsave(plot,
+       filename = "example_family_tree.pdf",
+       width = 8,
+       height = 7)
 
 
 temp_data2 <-
@@ -191,11 +180,10 @@ temp_data2$from <- temp_data$to
 temp_data2$to <- temp_data$from
 
 temp_data <-
-  rbind(temp_data,
-        temp_data2)
+  rbind(temp_data, temp_data2)
 
-plot <- 
-temp_data %>%
+plot <-
+  temp_data %>%
   dplyr::mutate(family_distance = as.character(family_distance)) %>%
   ggplot(aes(to, from)) +
   geom_tile(aes(fill = family_distance), color = "black") +
@@ -204,21 +192,26 @@ temp_data %>%
   scale_x_discrete(expand = expansion(mult = c(0, 0))) +
   scale_y_discrete(expand = expansion(mult = c(0, 0))) +
   theme(panel.grid = element_blank()) +
-  geom_text(aes(label =family_distance), color = "white") +
+  geom_text(aes(label = family_distance), color = "white") +
   labs(x = "", y = "")
 
-ggsave(plot, filename = "example_family_distance.pdf", width = 8.8, height = 7)
+plot
 
-subject_id <- 
-  object %>% 
-  activate_mass_dataset(what = "sample_info") %>% 
-  filter(class == "Subject") %>% 
+ggsave(plot,
+       filename = "example_family_distance.pdf",
+       width = 8.8,
+       height = 7)
+
+subject_id <-
+  object %>%
+  activate_mass_dataset(what = "sample_info") %>%
+  filter(class == "Subject") %>%
   pull(sample_id)
 
-temp_object <- 
-  object  %>% 
-  mutate_rsd(according_to_samples = subject_id) %>% 
-  activate_mass_dataset(what = "variable_info") %>% 
+temp_object <-
+  object  %>%
+  mutate_rsd(according_to_samples = subject_id) %>%
+  activate_mass_dataset(what = "variable_info") %>%
   filter(rsd > 0)
 
 # sample_cor_data <-
@@ -231,7 +224,7 @@ temp_object <-
 #       log(2) %>%
 #       activate_mass_dataset(what = "expression_data") %>%
 #       dplyr::pull(family_distance$from[idx])
-#     
+# 
 #     value2 <-
 #       temp_object %>%
 #       `+`(1) %>%
@@ -249,23 +242,23 @@ temp_object <-
 load("sample_cor_data")
 
 temp_data <-
-  cbind(family_distance,
-        sample_cor_data) %>%
-  dplyr::mutate(family_distance = case_when(family_distance == Inf ~ 10,
-                                            TRUE ~ family_distance)) %>% 
+  cbind(family_distance, sample_cor_data) %>%
+  dplyr::mutate(family_distance = case_when(family_distance == Inf ~ 10, TRUE ~ family_distance)) %>%
   # dplyr::mutate(family_distance = as.character(family_distance)) %>%
-  dplyr::mutate(family_distance = factor(family_distance, levels = c(1:4,10)))
+  dplyr::mutate(family_distance = factor(family_distance, levels = c(1:4, 10)))
 
 library(ggsignif)
 
-plot <- 
-temp_data %>%
-  ggplot(aes(family_distance, cor, group=family_distance)) +
+plot <-
+  temp_data %>%
+  ggplot(aes(family_distance, cor, group = family_distance)) +
   theme_base +
-  geom_jitter(aes(color = family_distance),
-               shape = 16,
-               alpha = 0.8,
-              show.legend = FALSE) +
+  geom_jitter(
+    aes(color = family_distance),
+    shape = 16,
+    alpha = 0.8,
+    show.legend = FALSE
+  ) +
   geom_boxplot(outlier.shape = NA,
                fill = "transparent",
                color = "black") +
@@ -276,15 +269,19 @@ temp_data %>%
   ggsignif::geom_signif(
     test = "wilcox.test",
     comparisons = list(
-    c("1", "2"),
-    c("1", "3"),
-    c("1", "4"),
-    c("1", "10"),
-    c("2", "3"),
-    c("2", "4"),
-    c("2", "10")
-  ),
-  y_position = c(1, 0.99, 0.98, 0.97, 0.96, 0.95, 0.94))
+      c("1", "2"),
+      c("1", "3"),
+      c("1", "4"),
+      c("1", "10"),
+      c("2", "3"),
+      c("2", "4"),
+      c("2", "10")
+    ),
+    y_position = c(1, 0.99, 0.98, 0.97, 0.96, 0.95, 0.94)
+  )
 plot
 
-ggsave(plot, filename = "family_distance_vs_correlation.pdf", width = 6, height = 8)
+ggsave(plot,
+       filename = "family_distance_vs_correlation.pdf",
+       width = 6,
+       height = 8)
